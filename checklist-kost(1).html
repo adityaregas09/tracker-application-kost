@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Kost</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1B2D;
+    --bg-soft:#16263D;
+    --paper:#FBF7EE;
+    --paper-dim:#F1EBDB;
+    --ink:#1C2A3A;
+    --ink-soft:#5B6B7D;
+    --gold:#D9A441;
+    --gold-soft:#F1D28A;
+    --sage:#6F9271;
+    --dusty:#6C87A8;
+    --mauve:#A6768C;
+    --line:#E3DBC6;
+    --line-dark:#28394F;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 8% 8%, rgba(217,164,65,0.10), transparent 40%),
+      radial-gradient(circle at 92% 88%, rgba(111,146,113,0.10), transparent 40%);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:28px 18px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  /* ===== HEADER ===== */
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:26px;
+  }
+  .title-block .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--gold-soft);
+    margin-bottom:6px;
+  }
+  .title-block h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    color:var(--paper);
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .title-block p{
+    margin:0;
+    color:#93A2B8;
+    font-size:14px;
+  }
+
+  .box-meter{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--bg-soft);
+    border:1px solid var(--line-dark);
+    border-radius:16px;
+    padding:12px 18px;
+  }
+  .box-svg{width:52px;height:52px;flex-shrink:0;}
+  .box-meter .num{
+    font-family:'Fraunces',serif;
+    font-size:26px;
+    color:var(--paper);
+    line-height:1;
+  }
+  .box-meter .lbl{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#8798AE;
+    margin-top:3px;
+  }
+
+  /* ===== LAYOUT ===== */
+  .board{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    gap:22px;
+    background:var(--paper);
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.45);
+  }
+  @media(max-width:760px){
+    .board{grid-template-columns:1fr;padding:14px;}
+  }
+
+  /* ===== SIDEBAR / TABS ===== */
+  .tabs{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    border-right:1px solid var(--line);
+    padding-right:16px;
+  }
+  @media(max-width:760px){
+    .tabs{
+      flex-direction:row;
+      overflow-x:auto;
+      border-right:none;
+      border-bottom:1px solid var(--line);
+      padding:0 0 12px;
+      gap:8px;
+    }
+  }
+  .tab{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    border:1px solid transparent;
+    background:transparent;
+    text-align:left;
+    font-family:'Inter',sans-serif;
+    transition:background .15s ease, border-color .15s ease;
+    white-space:nowrap;
+    flex-shrink:0;
+    position:relative;
+  }
+  .tab:hover{background:var(--paper-dim);}
+  .tab.active{
+    background:#fff;
+    border-color:var(--line);
+    box-shadow:0 4px 14px -8px rgba(0,0,0,0.25);
+  }
+  .tab .icon{
+    width:20px;height:20px;flex-shrink:0;
+    color:var(--cat-color,var(--gold));
+  }
+  .tab .meta{display:flex;flex-direction:column;min-width:0;}
+  .tab .name{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .tab .count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+  }
+  .tab .done-dot{
+    margin-left:auto;
+    width:8px;height:8px;border-radius:50%;
+    background:var(--sage);
+    opacity:0;
+    flex-shrink:0;
+  }
+  .tab.complete .done-dot{opacity:1;}
+  .tab-progress{
+    position:absolute;
+    left:0;bottom:0;
+    height:2px;
+    background:var(--cat-color,var(--gold));
+    border-radius:0 0 10px 10px;
+    transition:width .3s ease;
+  }
+
+  /* ===== PANEL ===== */
+  .panel-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:14px;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .panel-head h2{
+    font-family:'Fraunces',serif;
+    font-size:24px;
+    font-weight:600;
+    margin:0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .panel-head h2 .icon{width:24px;height:24px;color:var(--cat-color,var(--gold));}
+  .panel-head .stamp{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    color:var(--sage);
+    border:1px solid var(--sage);
+    padding:3px 10px;
+    border-radius:999px;
+    text-transform:uppercase;
+  }
+  .panel-progress-bar{
+    height:6px;
+    background:var(--paper-dim);
+    border-radius:999px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .panel-progress-bar > div{
+    height:100%;
+    background:var(--cat-color,var(--gold));
+    border-radius:999px;
+    transition:width .3s ease;
+  }
+
+  .group-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:18px 0 8px;
+    padding-bottom:6px;
+    border-bottom:1px dashed var(--line);
+  }
+  .group-label:first-child{margin-top:0;}
+
+  .items{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:2px 18px;
+  }
+  @media(max-width:520px){.items{grid-template-columns:1fr;}}
+
+  .item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 6px;
+    border-radius:8px;
+    cursor:pointer;
+    user-select:none;
+    transition:background .12s ease;
+  }
+  .item:hover{background:var(--paper-dim);}
+
+  .item-actions{
+    margin-left:auto;
+    display:flex;
+    gap:2px;
+    flex-shrink:0;
+    opacity:.55;
+  }
+  .item:hover .item-actions{opacity:1;}
+  .icon-btn{
+    width:26px;height:26px;
+    border:none;
+    background:transparent;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink-soft);
+    transition:background .12s ease, color .12s ease;
+  }
+  .icon-btn:hover{background:var(--paper-dim);}
+  .icon-btn.del-btn:hover{color:#C0392B;}
+  .icon-btn.edit-btn:hover{color:var(--cat-color,var(--gold));}
+
+  .add-row{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+  }
+  .add-row input{
+    flex:1;
+    min-width:0;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1.4px solid var(--line);
+    background:#fff;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    color:var(--ink);
+  }
+  .add-row input:focus{outline:none;border-color:var(--cat-color,var(--gold));}
+  .add-row button{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:.03em;
+    white-space:nowrap;
+    background:var(--cat-color,var(--gold));
+    border:none;
+    color:#fff;
+    padding:0 16px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:filter .12s ease;
+  }
+  .add-row button:hover{filter:brightness(1.08);}
+
+  .chk{
+    width:20px;height:20px;
+    flex-shrink:0;
+    border-radius:6px;
+    border:1.6px solid #C9BFA3;
+    background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .item.checked .chk{
+    background:var(--cat-color,var(--gold));
+    border-color:var(--cat-color,var(--gold));
+  }
+  .chk svg{width:13px;height:13px;}
+  .chk path{
+    fill:none;
+    stroke:#fff;
+    stroke-width:3;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:20;
+    stroke-dashoffset:20;
+    transition:stroke-dashoffset .22s ease;
+  }
+  .item.checked .chk path{stroke-dashoffset:0;}
+
+  .item span.label{
+    font-size:14px;
+    color:var(--ink);
+    transition:color .15s ease, opacity .15s ease;
+    flex:1;
+    min-width:0;
+    overflow-wrap:break-word;
+  }
+  .item.checked span.label{
+    color:var(--ink-soft);
+    text-decoration:line-through;
+    text-decoration-color:#C9BFA3;
+    opacity:.75;
+  }
+
+  .footer-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:22px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .hint{font-size:12px;color:var(--ink-soft);}
+  .reset-btn{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:.05em;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    padding:8px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .reset-btn:hover{border-color:#C0392B;color:#C0392B;}
+
+  .loading{
+    color:#8798AE;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    text-align:center;
+    padding:40px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="title-block">
+      <div class="eyebrow">Anak Kost Edition</div>
+      <h1>Checklist Kost</h1>
+      <p>Centang barang yang sudah siap dibawa. Progres tersimpan otomatis.</p>
+    </div>
+    <div class="box-meter">
+      <svg class="box-svg" viewBox="0 0 52 52">
+        <rect x="4" y="18" width="44" height="30" rx="3" fill="none" stroke="#3A4D66" stroke-width="2"/>
+        <path d="M4 18 L26 6 L48 18" fill="none" stroke="#3A4D66" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="26" y1="6" x2="26" y2="48" stroke="#3A4D66" stroke-width="1.4" stroke-dasharray="2 3"/>
+        <rect id="boxFill" x="4" y="48" width="44" height="0" fill="#D9A441" opacity="0.85"/>
+        <rect x="4" y="18" width="44" height="30" rx="3" fill="none" stroke="#3A4D66" stroke-width="2"/>
+      </svg>
+      <div>
+        <div class="num" id="overallPct">0%</div>
+        <div class="lbl" id="overallCount">0 / 0 barang</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="tabs" id="tabs"></div>
+    <div class="panel" id="panel">
+      <div class="loading">Memuat checklist kamu…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ICONS = {
+  tidur: '<path d="M3 18v-7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/><path d="M3 18h18M3 14h18" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/><circle cx="7" cy="10" r="1.6" fill="currentColor"/>',
+  mandi: '<path d="M12 3c3 3.4 5 6.6 5 9.2A5 5 0 0 1 7 12.2C7 9.6 9 6.4 12 3Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/>',
+  dapur: '<path d="M7 3v8M9 3v8M7 11h2M8 11v10" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/><path d="M16 3c-1.5 1.5-2 3-2 5s1 3 2 3v10" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>',
+  p3k: '<rect x="3" y="6" width="18" height="14" rx="2.4" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M9 6V5a3 3 0 0 1 6 0v1" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M12 10v6M9 13h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  cuci: '<path d="M4 8h16l-1.6 11.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8L4 8Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.7" fill="none"/>',
+  listrik: '<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
+  tulis: '<path d="M4 20l1-4.5L15.5 5 19 8.5 8.5 19 4 20Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M13.5 6.5 17.5 10.5" stroke="currentColor" stroke-width="1.7"/>',
+  pakaian: '<path d="M12 4a2 2 0 0 1 2 2c2 0 6 1.2 8 4l-3 2-2-1.4V19H7v-8.4L5 12l-3-2c2-2.8 6-4 8-4a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
+  lain: '<rect x="4" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7" fill="none"/><rect x="13" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7" fill="none"/><rect x="4" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7" fill="none"/><rect x="13" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7" fill="none"/>',
+  daftarulang: '<path d="M7 2h8l4 4v16H7V2Z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M15 2v4h4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M9.5 12h5M9.5 15.5h5M9.5 8.5h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+};
+
+const DEFAULT_CATEGORIES = [
+  { id:'tidur', name:'Kebutuhan Tidur', icon:'tidur', color:'var(--gold)', items:[
+    'Selimut','Bantal','Guling','Selimut Tipis','Sarung Bantal, Guling & Sprei'
+  ]},
+  { id:'mandi', name:'Kebutuhan Mandi', icon:'mandi', color:'var(--dusty)', items:[
+    'Sabun','Shampoo','Sabun Cuci Muka','Sikat Gigi','Odol','Handuk','Keset','Sikat WC','Gayung','Skincare','Bodycare'
+  ]},
+  { id:'dapur', name:'Dapur', icon:'dapur', color:'var(--sage)', items:[
+    'Pisau','Talenan','Ulekan','Pompa Galon','Piring','Mangkok','Sendok','Garpu','Sumpit','Sedotan & Sikat','Gelas','Panci','Wajan','Sendok Nasi','Tumbler','Tempat Bekal','Wadah Alat Makan','Sabun Cuci Piring','Spons','Bumbu Dapur (Garam, Gula, Kaldu, Lada, Kecap, Saos, Minyak)','Kresek Sampah','Pengukur/Takar Beras'
+  ]},
+  { id:'p3k', name:'P3K', icon:'p3k', color:'var(--mauve)', items:[
+    'Obat Pereda Nyeri/Penurun Demam (Ibuprofen, Acetaminophen, Aspirin)','Obat Alergi','Obat Batuk','Paracetamol','Obat Maag','Obat Diare','Obat Tetes Mata','Termometer','Salep','Gel Lidah Buaya','Iodine (Disinfektan Luka)','Plester','Handsaplast','Alkohol','Kasa Steril','Gunting Kecil','Masker','Vitamin','Madu','Tolak Angin','Kayu Putih'
+  ]},
+  { id:'cuci', name:'Mencuci Pakaian', icon:'cuci', color:'var(--dusty)', items:[
+    'Ember','Deterjen Cair/Bubuk','Pewangi','Softener','Tempat Jemuran','Jepit Jemuran','Setrika','Alas Setrika','Wadah Baju Kotor','Kispray'
+  ]},
+  { id:'listrik', name:'Listrik', icon:'listrik', color:'var(--gold)', items:[
+    'Terminal','Kabel Cas Darurat','Powerbank','Printer','Senter','Lampu Emergency','HP + Charger','Laptop + Charger + Tas + Mouse + Keyboard'
+  ]},
+  { id:'tulis', name:'Alat Tulis', icon:'tulis', color:'var(--sage)', items:[
+    'Spidol Besar + Penghapus','Spidol Kecil','Alat Warna','Pensil Mekanik + Isi','Pensil Batang','Peraut','Pulpen','Pulpen Warna','Highlighter','Sticky Notes','Gunting','Lem','Double Tape','Solatip','Buku Catatan','Binder','Isi Binder','Kertas HVS','Whiteboard Kecil','Klip Kertas'
+  ]},
+  { id:'pakaian', name:'Pakaian dll', icon:'pakaian', color:'var(--mauve)', items:[
+    'Pakaian Kampus','Pakaian Rumah','Pakaian Tidur','Pakaian Main','Pakaian Olahraga','Jaket','Baju Renang','Dalaman','Sepatu Sandal','Sepatu','Sandal','Tas Sedang','Tas Main','Tas Kampus','Seragam SMA','Kaos Kaki','Sabuk'
+  ]},
+  { id:'lain', name:'Lainnya', icon:'lain', color:'var(--dusty)', items:[
+    'Meja Belajar','Kursi Belajar','Rak Makanan','Rak Buku','Rak Sepatu','Sapu','Cermin','Gantungan Baju','Helm','Baygon','Jam','Payung','Jas Hujan','Lilin','Dokumen Pribadi','Wadah Beras'
+  ]},
+  { id:'daftarulang', name:'Daftar Ulang', icon:'daftarulang', color:'var(--gold)', groups:[
+    { label:'Berkas Dokumen Fisik', items:[
+      'Bukti Bayar UKT','Kartu Peserta SNBT','Ijazah / SKL','KTP / SIM','Dokumen R1','Dokumen R2'
+    ]}
+  ]}
+];
+
+const DATA_KEY = 'kost-checklist:data-v2';
+const CHECKED_KEY = 'kost-checklist:checked-v2';
+
+let CATEGORIES = [];
+let checked = {};
+let activeCat = null;
+
+function genId(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2,9);
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// bikin salinan CATEGORIES bawaan, setiap item dikasih id unik
+function buildDefaultCategories(){
+  return DEFAULT_CATEGORIES.map(c=>{
+    const cat = { id:c.id, name:c.name, icon:c.icon, color:c.color };
+    if(c.groups){
+      cat.groups = c.groups.map(g=>({ label:g.label, items: g.items.map(label=>({id:genId(), label})) }));
+    } else {
+      cat.groups = [{ label:null, items: c.items.map(label=>({id:genId(), label})) }];
+    }
+    return cat;
+  });
+}
+
+function catProgress(cat){
+  let total=0, done=0;
+  cat.groups.forEach(g=>{
+    g.items.forEach(item=>{
+      total++;
+      if(checked[item.id]) done++;
+    });
+  });
+  return {total, done};
+}
+
+function overallProgress(){
+  let total=0, done=0;
+  CATEGORIES.forEach(c=>{
+    const p = catProgress(c);
+    total += p.total; done += p.done;
+  });
+  return {total, done};
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(DATA_KEY);
+    CATEGORIES = raw ? JSON.parse(raw) : buildDefaultCategories();
+    if(!raw) saveData();
+  }catch(e){
+    // localStorage bisa gagal di mode private browsing / cookie diblokir
+    console.error('Gagal memuat data checklist', e);
+    CATEGORIES = buildDefaultCategories();
+  }
+  activeCat = CATEGORIES[0].id;
+}
+
+function saveData(){
+  try{
+    localStorage.setItem(DATA_KEY, JSON.stringify(CATEGORIES));
+  }catch(e){
+    console.error('Gagal menyimpan data checklist', e);
+  }
+}
+
+function loadChecked(){
+  try{
+    const raw = localStorage.getItem(CHECKED_KEY);
+    checked = raw ? JSON.parse(raw) : {};
+  }catch(e){
+    console.error('Gagal memuat status centang', e);
+    checked = {};
+  }
+}
+
+function saveChecked(){
+  try{
+    localStorage.setItem(CHECKED_KEY, JSON.stringify(checked));
+  }catch(e){
+    console.error('Gagal menyimpan status centang', e);
+  }
+}
+
+function renderTabs(){
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  CATEGORIES.forEach(cat=>{
+    const p = catProgress(cat);
+    const pct = p.total ? Math.round((p.done/p.total)*100) : 0;
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (cat.id===activeCat?' active':'') + (pct===100?' complete':'');
+    btn.style.setProperty('--cat-color', cat.color);
+    btn.innerHTML = `
+      <svg class="icon" viewBox="0 0 24 24">${ICONS[cat.icon]}</svg>
+      <div class="meta">
+        <span class="name">${cat.name}</span>
+        <span class="count">${p.done}/${p.total}</span>
+      </div>
+      <span class="done-dot"></span>
+      <div class="tab-progress" style="width:${pct}%"></div>
+    `;
+    btn.addEventListener('click', ()=>{ activeCat = cat.id; render(); });
+    tabsEl.appendChild(btn);
+  });
+}
+
+function renderPanel(){
+  const cat = CATEGORIES.find(c=>c.id===activeCat);
+  const panel = document.getElementById('panel');
+  const p = catProgress(cat);
+  const pct = p.total ? Math.round((p.done/p.total)*100) : 0;
+
+  let groupsHtml = '';
+  cat.groups.forEach(g=>{
+    if(g.label) groupsHtml += `<div class="group-label">${escapeHtml(g.label)}</div>`;
+    groupsHtml += '<div class="items">';
+    g.items.forEach(item=>{
+      const isChecked = !!checked[item.id];
+      groupsHtml += `
+        <div class="item${isChecked?' checked':''}" data-id="${item.id}" style="--cat-color:${cat.color}">
+          <span class="chk"><svg viewBox="0 0 20 20"><path d="M4 10l4 4 8-9"/></svg></span>
+          <span class="label">${escapeHtml(item.label)}</span>
+          <span class="item-actions">
+            <button type="button" class="icon-btn edit-btn" data-id="${item.id}" title="Edit item">✎</button>
+            <button type="button" class="icon-btn del-btn" data-id="${item.id}" title="Hapus item">🗑</button>
+          </span>
+        </div>`;
+    });
+    groupsHtml += '</div>';
+  });
+
+  panel.innerHTML = `
+    <div class="panel-head">
+      <h2><svg class="icon" viewBox="0 0 24 24" style="--cat-color:${cat.color}">${ICONS[cat.icon]}</svg>${cat.name}</h2>
+      ${pct===100 ? '<span class="stamp">Beres ✓</span>' : `<span class="stamp" style="color:var(--ink-soft);border-color:var(--line)">${p.done}/${p.total} siap</span>`}
+    </div>
+    <div class="panel-progress-bar" style="--cat-color:${cat.color}"><div style="width:${pct}%;background:${cat.color}"></div></div>
+    ${groupsHtml}
+    <div class="add-row">
+      <input type="text" id="newItemInput" placeholder="Nama barang baru…" style="--cat-color:${cat.color}">
+      <button type="button" id="addItemBtn" style="--cat-color:${cat.color}">+ Tambah</button>
+    </div>
+    <div class="footer-row">
+      <span class="hint">Klik item untuk centang · ✎ edit · 🗑 hapus — semua tersimpan otomatis di perangkat ini.</span>
+      <button class="reset-btn" id="resetCat">Reset centang kategori ini</button>
+    </div>
+  `;
+
+  // klik baris item = toggle centang (kecuali kalau yang diklik tombol edit/hapus)
+  panel.querySelectorAll('.item').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('.item-actions')) return;
+      const id = el.dataset.id;
+      checked[id] = !checked[id];
+      saveChecked();
+      render();
+    });
+  });
+
+  // tombol edit
+  panel.querySelectorAll('.edit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id;
+      let target = null;
+      cat.groups.forEach(g=> g.items.forEach(it=>{ if(it.id===id) target = it; }));
+      if(!target) return;
+      const newLabel = prompt('Edit nama barang:', target.label);
+      if(newLabel === null) return; // dibatalkan
+      const trimmed = newLabel.trim();
+      if(trimmed === '') return;
+      target.label = trimmed;
+      saveData();
+      render();
+    });
+  });
+
+  // tombol hapus
+  panel.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id;
+      let removedLabel = null, ownerGroup = null, ownerIdx = -1;
+      cat.groups.forEach(g=>{
+        const idx = g.items.findIndex(it=>it.id===id);
+        if(idx !== -1){ removedLabel = g.items[idx].label; ownerGroup = g; ownerIdx = idx; }
+      });
+      if(removedLabel === null) return;
+      if(!confirm(`Hapus "${removedLabel}" dari daftar?`)) return;
+      ownerGroup.items.splice(ownerIdx,1);
+      delete checked[id];
+      saveData();
+      saveChecked();
+      render();
+    });
+  });
+
+  // tambah item baru
+  const addBtn = document.getElementById('addItemBtn');
+  const addInput = document.getElementById('newItemInput');
+  function handleAddItem(){
+    const val = addInput.value.trim();
+    if(val === '') return;
+    const lastGroup = cat.groups[cat.groups.length-1];
+    lastGroup.items.push({ id: genId(), label: val });
+    saveData();
+    render();
+    // fokus lagi ke input supaya bisa nambah beberapa item cepat (setelah render, elemen lama sudah diganti)
+    const freshInput = document.getElementById('newItemInput');
+    if(freshInput) freshInput.focus();
+  }
+  addBtn.addEventListener('click', handleAddItem);
+  addInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') handleAddItem();
+  });
+
+  document.getElementById('resetCat').addEventListener('click', ()=>{
+    cat.groups.forEach(g=> g.items.forEach(item=>{
+      delete checked[item.id];
+    }));
+    saveChecked();
+    render();
+  });
+}
+
+function renderOverall(){
+  const {total, done} = overallProgress();
+  const pct = total ? Math.round((done/total)*100) : 0;
+  document.getElementById('overallPct').textContent = pct+'%';
+  document.getElementById('overallCount').textContent = `${done} / ${total} barang`;
+  const fillH = 30 * (pct/100);
+  const fill = document.getElementById('boxFill');
+  fill.setAttribute('height', fillH.toFixed(1));
+  fill.setAttribute('y', (48-fillH).toFixed(1));
+}
+
+function render(){
+  renderTabs();
+  renderPanel();
+  renderOverall();
+}
+
+(function init(){
+  loadData();
+  loadChecked();
+  render();
+})();
+</script>
+</body>
+</html>
